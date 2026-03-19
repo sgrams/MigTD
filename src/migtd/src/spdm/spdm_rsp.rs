@@ -1089,7 +1089,6 @@ pub fn handle_exchange_rebind_attest_info_req(
             remote_policy,
             &td_report_init_vec,
             &event_log_init_vec,
-            &td_report_init_vec,
             &servtd_ext_vec,
         );
         if let Err(e) = &policy_check_result {

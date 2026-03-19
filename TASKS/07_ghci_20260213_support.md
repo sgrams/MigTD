@@ -1,6 +1,6 @@
 # Task 7: MigTD changes to support GHCI_20260214
 
-**Status:** In Progress
+**Status:** Done (7.1-7.4 complete)
 **ETA:** ~2 weeks
 **Component:** MigTD
 **Branch:** `migtd_ghci_20260213`
@@ -82,24 +82,31 @@ Updated `InitData` and `MigtdDataEntry` to match GHCI 1.5 (20260214) layout.
 
 ---
 
-### 7.4 Update MigTD flows w.r.t policy verifications and SERVTD_EXT verifications — NOT STARTED
+### 7.4 Update MigTD flows w.r.t policy verifications and SERVTD_EXT verifications — DONE
 
-Policy and SERVTD_EXT verification logic needs updating per the new spec.
+Policy and SERVTD_EXT verification logic updated per GHCI 1.5 (20260214).
 
-**Files to modify:**
-- [src/migtd/src/mig_policy.rs](../src/migtd/src/mig_policy.rs) — `authenticate_rebinding_old()`, `authenticate_rebinding_new()`, `verify_servtd_hash()`, `verify_init_tdreport()`
-- [src/migtd/src/migration/servtd_ext.rs](../src/migtd/src/migration/servtd_ext.rs) — `ServtdExt` struct, `read_servtd_ext()`, `write_approved_servtd_ext_hash()`
-- [src/migtd/src/ratls/server_client.rs](../src/migtd/src/ratls/server_client.rs) — `verify_rebinding_old_cert()`, `verify_rebinding_new_cert()`, certificate creation with SERVTD_EXT extensions
-- [src/migtd/src/ratls/mod.rs](../src/migtd/src/ratls/mod.rs) — Extension OIDs (`EXTNID_MIGTD_SERVTD_EXT`, etc.)
+**Files modified:**
+- [src/migtd/src/mig_policy.rs](../src/migtd/src/mig_policy.rs) — `authenticate_rebinding_old()`, `verify_servtd_hash()`, `verify_init_tdinfo()`
+- [src/migtd/src/ratls/server_client.rs](../src/migtd/src/ratls/server_client.rs) — caller update (arg count)
+- [src/migtd/src/spdm/spdm_rsp.rs](../src/migtd/src/spdm/spdm_rsp.rs) — caller update (arg count)
 
-**Work required:**
-- Update `ServtdExt` struct if fields changed in new spec
-- Update policy verification to check `tdinfo.mrowner` matches local `policy_key` and `tdinfo.mrownerconfig` matches local `policy_svn`
-- Update X.509 certificate extension OIDs if changed
-- Update SPDM VDM message element types if changed
-- Ensure attribute masking flags in `verify_servtd_hash()` match new spec
-- Update `verify_init_tdreport()` to verify TDINFO_STRUCT instead of full TDREPORT
-- Add `curr_servtd_attr` verification per GHCI 1.5 requirement
+**Changes made (mig_policy.rs):**
+- `verify_servtd_hash()`: Now accepts TDINFO_STRUCT bytes (not full TDREPORT). Parses as `TdInfo` directly using `MaybeUninit` + `copy_nonoverlapping`. Returns `TdInfo` instead of `TdxReport`. Attribute masking operates on TdInfo fields directly.
+- `verify_init_tdreport()` → `verify_init_tdinfo()`: Renamed; returns `TdInfo` instead of `TdxReport`
+- Added `get_rtmrs_from_tdinfo()`: Extracts RTMR values from `TdInfo` (analogous to `get_rtmrs_from_tdreport` for `TdxReport`)
+- Added `setup_evaluation_data_with_tdinfo()`: Builds `PolicyEvaluationInfo` from `TdInfo` + local policy (analogous to `setup_evaluation_data_with_tdreport` for `TdxReport`; `tee_tcb_svn` is `None` since TDINFO doesn't carry TEE_TCB_INFO)
+- `authenticate_rebinding_old()`: Consolidated params — removed `init_policy` and `init_td_report`, replaced with single `init_tdinfo: &[u8]` (6 params instead of 7). No longer calls `verify_policy_and_event_log()` for init data (no JSON policy blob). Instead calls `verify_event_log()` directly against RTMRs from init_tdinfo, and uses `setup_evaluation_data_with_tdinfo()` with local policy for TCB evaluation.
+- Removed unused `get_init_tcb_evaluation_info()` function
+- Removed unused `TD_INFO_OFFSET` constant
+
+**Changes made (server_client.rs, spdm_rsp.rs):**
+- Updated `authenticate_rebinding_old()` call sites to pass 6 args instead of 7 (removed duplicate init_tdinfo argument)
+
+**Not changed (confirmed no update needed):**
+- `ServtdExt` struct in `servtd_ext.rs` — fields unchanged in new spec
+- `authenticate_rebinding_new()` — takes full TDREPORT from peer (not from MIGTD_DATA), unchanged
+- Extension OIDs in `ratls/mod.rs` — unchanged
 
 ---
 

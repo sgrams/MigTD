@@ -1065,7 +1065,6 @@ mod verify {
             remote_policy,
             init_tdinfo,
             init_event_log,
-            init_tdinfo,
             servtd_ext,
         );
 
