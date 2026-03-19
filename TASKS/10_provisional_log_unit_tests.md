@@ -1,7 +1,6 @@
 # Task 10: Fix provisional log support unit tests
 
-**Status:** WIP
-**ETA:** Few days
+**Status:** DONE
 **Component:** MigTD
 
 ## Overview
@@ -48,12 +47,12 @@ The logging system uses two buffer pools:
 
 ## Work Required
 
-- Identify which specific tests are failing (run `cargo test` with appropriate features)
-- Fix test failures — likely related to:
-  - State leaking between tests (shared global `LOGGING_INFORMATION`, `LOGAREAPTR`, `PROVISIONAL_LOGAREAPTR`)
-  - Async test handling for `enable_logarea()`
-  - Buffer offset calculations in circular buffer edge cases
-- Ensure all 11 tests pass
+- ~~Identify which specific tests are failing (run `cargo test` with appropriate features)~~
+- ~~Fix test failures~~
+- ~~Ensure all 11 tests pass~~
+
+Fixed mismatched `cfg` gates in `data.rs` that prevented compilation with
+`vmcall-raw,policy_v2` (without `main`). All 11 logging tests pass.
 
 ## How to Run
 
@@ -61,3 +60,12 @@ The logging system uses two buffer pools:
 # Run logging tests (adjust features as needed)
 cargo test --package migtd -p migtd --lib migration::logging --features "vmcall-raw,policy_v2"
 ```
+
+## Resolution
+
+All 11 logging unit tests pass — both with serial (`--test-threads=1`) and parallel execution.
+
+**Fix applied:** The `RebindingInfo` import and `StartRebinding` variant in `data.rs` were
+gated on `vmcall-raw + policy_v2`, but the `rebinding` module requires `main + policy_v2 +
+vmcall-raw`. Added the missing `feature = "main"` gate to both cfg attributes so
+compilation succeeds when `main` is not enabled.
