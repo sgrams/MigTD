@@ -110,13 +110,12 @@ Policy and SERVTD_EXT verification logic updated per GHCI 1.5 (20260214).
 
 ---
 
-## TODO markers left in code
+## Notes on wire compatibility
 
-The following `TODO(ghci_20260214)` markers were added for follow-up work:
-- `rebinding.rs:581` — Update RATLS cert extension to remove init_event_log dependency
-- `spdm_req.rs` — Consider updating `VdmMessageElementType::TdReportInit` to `TdInfoInit`
-- `spdm_req.rs` — Update VDM protocol to remove init_event_log dependency
-- `spdm_req.rs` — Update VDM protocol to use mrowner directly
+The following VDM element type names were retained for wire compatibility even though the payload semantics changed per GHCI 1.5:
+- `VdmMessageElementType::TdReportInit` — now carries TDINFO_STRUCT, not full TDREPORT
+- `VdmMessageElementType::EventLogInit` — uses local event log (no longer in MIGTD_DATA)
+- `VdmMessageElementType::MigPolicyInit` — carries mrowner bytes from TDINFO (was hash of init_policy JSON)
 
 ## Testing
 

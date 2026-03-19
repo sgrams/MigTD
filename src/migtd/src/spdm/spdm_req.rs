@@ -952,7 +952,8 @@ pub async fn send_and_receive_sdm_rebind_attest_info(
         .ok_or(SPDM_STATUS_BUFFER_FULL)?;
 
     //TD info init (per GHCI 1.5: MIGTD_DATA type 0 = TDINFO_STRUCT)
-    // TODO(ghci_20260214): Consider updating VdmMessageElementType::TdReportInit to TdInfoInit
+    // NOTE: VdmMessageElementType::TdReportInit name retained for wire compatibility;
+    // payload is now TDINFO_STRUCT, not full TDREPORT.
     let tdinfo_init = &init_migtd_data.init_tdinfo;
     let tdreport_init_element = VdmMessageElement {
         element_type: VdmMessageElementType::TdReportInit,
@@ -967,7 +968,7 @@ pub async fn send_and_receive_sdm_rebind_attest_info(
 
     //event log init
     // Per GHCI 1.5: init_event_log is no longer in MIGTD_DATA; use local event log.
-    // TODO(ghci_20260214): Update VDM protocol to remove init_event_log dependency
+    // NOTE: EventLogInit VDM element retained for wire compatibility with responder.
     let event_log_init = crate::event_log::get_event_log().unwrap_or(&[]);
     let event_log_init_element = VdmMessageElement {
         element_type: VdmMessageElementType::EventLogInit,
@@ -981,8 +982,8 @@ pub async fn send_and_receive_sdm_rebind_attest_info(
         .ok_or(SPDM_STATUS_BUFFER_FULL)?;
 
     //mig policy init hash
-    // Per GHCI 1.5: policy_key is in tdinfo.mrowner; use mrowner as init_policy_hash.
-    // TODO(ghci_20260214): Update VDM protocol to use mrowner directly
+    // Per GHCI 1.5: policy_key is in tdinfo.mrowner; sent as init_policy_hash.
+    // NOTE: MigPolicyInit VDM element name retained for wire compatibility.
     let mig_policy_init_hash = init_migtd_data.mrowner().to_vec();
     let mig_policy_init_element = VdmMessageElement {
         element_type: VdmMessageElementType::MigPolicyInit,
